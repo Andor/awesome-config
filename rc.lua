@@ -30,20 +30,38 @@ function get_traffic(interface)
 
    if frx then
       rx = frx:read("*l")
+      rx = tonumber(rx)
       frx:close()
    end
    if ftx then
       tx = ftx:read("*l")
+      tx = tonumber(tx)
       ftx:close()
    end
 
    local text = "[" .. int .. ":"
+   local number, mod = "None", ""
    if tx and rx then
-      text = text .. math.floor((tonumber(rx)+tonumber(tx))/1024) .. "k"
-   else
-      text = text .. "None"
+      number = (tonumber(rx)+tonumber(tx))
+      if number > 10*1024 then
+	 number = number/1024
+	 if number > 10*1024 then
+	    number = number/1024
+	    if number > 10*1024 then
+	       number = number/1024
+	       mod = "g"
+	    else
+	       mod = "m"
+	    end
+	 else
+	    mod = "k"
+	 end
+      else
+	 mod = "b"
+      end
+      number = math.floor(number)
    end
-   text = text .. "]"
+   text = text .. number .. mod .. "]"
    return text
 end
 -- виджет индикатора ppp0
