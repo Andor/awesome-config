@@ -12,11 +12,11 @@ local capi = { widget = widget,
 --- Text widget.
 module("awful.widget.text")
 
---- Create a textwidget widget. It draws text it is in a textbox.
+--- Создаёт текстовый виджет с опциональным автообновлением.
 -- @param args Standard arguments for textbox widget.
--- @param format The time format. Default is " %a %b %d, %H:%M ".
--- @param timeout How often update the time. Default is 60.
--- @return A textbox widget.
+-- @param update_finction Функция обновления текста виджета.
+-- @param timeout Таймаут обновления. По-умолчанию 10.
+-- @return Виджет.
 function new(args)
     local args = args or {}
     local timeout = args.timeout or 60

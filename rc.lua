@@ -7,18 +7,16 @@ package.path = os.getenv("HOME") .. "/.config/awesome/lib/?.lua;" .. package.pat
 local log = require "log"
 local os = os
 
--- Theme settings
-beautiful.init(os.getenv("HOME") .. "/.config/awesome/theme.lua")
-
 -- Загрузка модулей
 local io = io
 local math = math
-local battery = require("battery")
 local text = require("text")
 local awful = require("awful")
-local join = awful.util.table.join
 local beautiful = beautiful
 local tostring, tonumber = tostring, tonumber
+
+-- Установка темы
+beautiful.init(os.getenv("HOME") .. "/.config/awesome/theme.lua")
 
 function get_traffic(interface)
    local int = tostring(interface) or "eth0"
@@ -58,6 +56,12 @@ function get_traffic(interface)
       number = math.floor(number)
    end
    text = text .. number .. mod .. "]"
+   data = {
+      int = int,
+      tx = tx,
+      rx = rx,
+      sum = number,
+      mod = mod }
    return text
 end
 
@@ -106,16 +110,6 @@ function battery_status(battery)
    if percent > 100 then percent = 100 end
    if percent < 0 then percent = 0 end
 
-   -- Получение цвета.
-   local theme = beautiful.get()
-   theme = theme.battery or {}
-   local color
-   if warning then 
-      color = theme.warning
-   else
-      color = theme[state] or theme.charged or "white"
-   end
-
    -- Обновление данных.
    local data = {
       battery = battery,
@@ -125,19 +119,35 @@ function battery_status(battery)
       state = state,
       warning = warning,
       percent = percent,
-      elapsed = elapsed,
-      color = color }
+      elapsed = elapsed}
    return data
 end
 
 -- виджет индикатора ppp0
 myppp0 = awful.widget.text({ align = "left", timeout = 10, update_function = function() return get_traffic("ppp0") end })
 -- виджет индикатора заряда батареи
--- mybattery = awful.widget.battery({ align = "left" }, { battery = 0, timeout = 5 })
 mybattery = awful.widget.text({align = "left", timeout = 10,
 			       update_function = function()
 						    local data = battery_status(0)
-						    return "[Bat" .. data.battery .. ":<span color='" ..data.color.. "'>".. data.percent .. "%</span>] "
+						    local theme = beautiful.get()
+						    theme = theme.battery or {}
+						    -- Получение цвета.
+						    local color
+						    if warning then
+						       color = theme.warning
+						    else
+						       color = theme[state] or theme.charged or "white"
+						    end
+						    -- Стрелочка.
+						    local arrow
+						    if data.state == "charging" then
+						       arrow = "↑"
+						    else if data.state == "discharging" then
+							  arrow = "↓"
+						       end
+						    end
+						    if arrow then arrow = arrow .. " " else arrow = "" end
+						    return "[Bat" .. data.battery .. ":"..arrow.."<span color='" ..color.. "'>".. data.percent .. "%</span>] "
 						 end})
 -- нормальный вид часов, а не дефолтный
 mytextclock = awful.widget.textclock({align = "left"}, " %Y.%m.%d, %A, %T ", 1)
