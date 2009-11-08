@@ -5,6 +5,7 @@ require("awful.util")
 -- изменение путей загрузки
 package.path = os.getenv("HOME") .. "/.config/awesome/lib/?.lua;" .. package.path
 local log = require "log"
+local os = os
 
 -- Theme settings
 beautiful.init(os.getenv("HOME") .. "/.config/awesome/theme.lua")
@@ -16,26 +17,21 @@ local battery = require("battery")
 local text = require("text")
 local awful = require("awful")
 local join = awful.util.table.join
-
--- нормальный вид часов, а не дефолтный
-mytextclock = awful.widget.textclock({align = "left"}, " %Y.%m.%d, %A, %T ", 1)
--- виджет индикатора заряда батареи
-mybattery = awful.widget.battery({ align = "left" }, { battery = 0, timeout = 5 })
+local beautiful = beautiful
+local tostring, tonumber = tostring, tonumber
 
 function get_traffic(interface)
    local int = tostring(interface) or "eth0"
    local frx = io.open("/sys/class/net/" .. int .. "/statistics/rx_bytes", "r")
    local ftx = io.open("/sys/class/net/" .. int .. "/statistics/tx_bytes", "r")
-   local rx, tx = 0,0
+   local rx, tx
 
    if frx then
-      rx = frx:read("*l")
-      rx = tonumber(rx)
+      rx = frx:read("*n")
       frx:close()
    end
    if ftx then
-      tx = ftx:read("*l")
-      tx = tonumber(tx)
+      tx = ftx:read("*n")
       ftx:close()
    end
 
@@ -64,8 +60,87 @@ function get_traffic(interface)
    text = text .. number .. mod .. "]"
    return text
 end
+
+function battery_status(battery)
+   local current, total, rate, state, warning = 0, 0, 0, 0, false
+   local battery = battery or 0
+   battery = tostring(battery)
+
+   local fbatstate = io.open("/proc/acpi/battery/BAT".. battery .."/state", "r")
+   local fbatinfo = io.open("/proc/acpi/battery/BAT".. battery .. "/info", "r")
+   if fbatstate then
+      -- Получение текущего заряда, скорости разрядки и состояния.
+      for l in fbatstate:lines("/proc/acpi/battery/BAT".. battery .."/state") do
+	 if l:match("remaining capacity:") then current = l:gsub("remaining capacity:%s*(%d+) mAh$", "%1") end
+	 if l:match("present rate:") then rate = l:gsub("present rate:%s*(%d+) mA$", "%1") end
+	 if l:match("charging state:") then state = l:gsub("charging state:%s*(%S+)$", "%1") end
+      end
+      fbatstate:close() 
+   end
+
+   if fbatinfo then
+      -- Получение максимального заряда и уровня опасного зазряда.
+      for l in fbatinfo:lines("/proc/acpi/battery/BAT".. battery .. "/info") do
+	 if l:match("last full capacity:") then total = l:gsub("last full capacity:%s*(%d+) mAh$", "%1") end
+	 if l:match("design capacity warning:") then
+	    if tonumber(current) <= tonumber(l:gsub("design capacity warning:%s*(%d+) mAh$", "%1"), 10 ) then
+	       warning = true else warning = false
+	    end
+	 end
+      end
+      fbatinfo:close() 
+   end
+
+   total = tonumber(total) or 0
+   current = tonumber(current) or 0
+   rate = tonumber(rate) or 0
+
+   -- Подсчёт оставшегося времени.
+   local elapsed = "00:00"
+   if rate ~= 0 then
+      elapsed = os.date("!%H:%M", (current/rate)*3600)
+   end
+
+   -- Подсчёт процентов разряда.
+   local percent = math.floor(current/total*100)
+   if percent > 100 then percent = 100 end
+   if percent < 0 then percent = 0 end
+
+   -- Получение цвета.
+   local theme = beautiful.get()
+   theme = theme.battery or {}
+   local color
+   if warning then 
+      color = theme.warning
+   else
+      color = theme[state] or theme.charged or "white"
+   end
+
+   -- Обновление данных.
+   local data = {
+      battery = battery,
+      current = current,
+      rate = rate,
+      total = total,
+      state = state,
+      warning = warning,
+      percent = percent,
+      elapsed = elapsed,
+      color = color }
+   return data
+end
+
 -- виджет индикатора ppp0
 myppp0 = awful.widget.text({ align = "left", timeout = 10, update_function = function() return get_traffic("ppp0") end })
+-- виджет индикатора заряда батареи
+-- mybattery = awful.widget.battery({ align = "left" }, { battery = 0, timeout = 5 })
+mybattery = awful.widget.text({align = "left", timeout = 10,
+			       update_function = function()
+						    local data = battery_status(0)
+						    return "[Bat" .. data.battery .. ":<span color='" ..data.color.. "'>".. data.percent .. "%</span>] "
+						 end})
+-- нормальный вид часов, а не дефолтный
+mytextclock = awful.widget.textclock({align = "left"}, " %Y.%m.%d, %A, %T ", 1)
 
 terminal = "urxvt"
 
@@ -122,4 +197,3 @@ awful.rules.rules = awful.util.table.join(
 --     { rule = { class = "MPlayer" },
 --       properties = { tag = tags[1][2] } } 
   } ) -- join
-
