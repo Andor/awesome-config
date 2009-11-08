@@ -3,14 +3,15 @@ dofile("/etc/xdg/awesome/rc.lua")
 
 require("awful.util")
 -- изменение путей загрузки
-package.path = os.getenv("HOME") .. "/.config/awesome/lib/?.lua;" .. package.path
-local log = require "log"
+--package.path = os.getenv("HOME") .. "/.config/awesome/lib/?.lua;" .. package.path
+
+local util = require("lib.util")
 local os = os
 
 -- Загрузка модулей
 local io = io
 local math = math
-local text = require("text")
+local text = require("lib.widget.text")
 local awful = require("awful")
 local beautiful = beautiful
 local tostring, tonumber = tostring, tonumber
@@ -20,18 +21,9 @@ beautiful.init(os.getenv("HOME") .. "/.config/awesome/theme.lua")
 
 function get_traffic(interface)
    local int = tostring(interface) or "eth0"
-   local frx = io.open("/sys/class/net/" .. int .. "/statistics/rx_bytes", "r")
-   local ftx = io.open("/sys/class/net/" .. int .. "/statistics/tx_bytes", "r")
-   local rx, tx
 
-   if frx then
-      rx = frx:read("*n")
-      frx:close()
-   end
-   if ftx then
-      tx = ftx:read("*n")
-      ftx:close()
-   end
+   local rx = util.file_read("/sys/class/net/" .. int .. "/statistics/rx_bytes")
+   local tx = util.file_read("/sys/class/net/" .. int .. "/statistics/tx_bytes")
 
    local text = "[" .. int .. ":"
    local number, mod = "None", ""
@@ -129,16 +121,22 @@ myppp0 = awful.widget.text({ align = "left", timeout = 10, update_function = fun
 mybattery = awful.widget.text({align = "left", timeout = 10,
 			       update_function = function()
 						    local data = battery_status(0)
-						    local theme = beautiful.get()
-						    theme = theme.battery or {}
+						    local btheme = beautiful.get()
+						    theme = btheme.battery or {}
+						    theme.warning = btheme.battery.warning or "red"
+						    theme.charging = btheme.battery.charging or "green"
+						    theme.discharging = btheme.battery.discharging or "yellow"
+						    theme.charged = btheme.battery.charged or btheme.fg_normal or "white"
+
 						    -- Получение цвета.
 						    local color
 						    if warning then
 						       color = theme.warning
 						    else
-						       color = theme[state] or theme.charged or "white"
+						       color = theme[data.state] or theme.charged or "white"
 						    end
-						    -- Стрелочка.
+
+						    -- Гламурная стрелочка.
 						    local arrow
 						    if data.state == "charging" then
 						       arrow = "↑"
@@ -147,7 +145,7 @@ mybattery = awful.widget.text({align = "left", timeout = 10,
 						       end
 						    end
 						    if arrow then arrow = arrow .. " " else arrow = "" end
-						    return "[Bat" .. data.battery .. ":"..arrow.."<span color='" ..color.. "'>".. data.percent .. "%</span>] "
+						    return "[Bat" .. data.battery .. ":" .. arrow .. "<span color='" .. color .. "'>" .. data.percent .. "%</span>] "
 						 end})
 -- нормальный вид часов, а не дефолтный
 mytextclock = awful.widget.textclock({align = "left"}, " %Y.%m.%d, %A, %T ", 1)

@@ -10,7 +10,7 @@ local capi = { widget = widget,
                timer = timer }
 
 --- Text widget.
-module("awful.widget.text")
+module("lib.widget.text")
 
 --- Создаёт текстовый виджет с опциональным автообновлением.
 -- @param args Standard arguments for textbox widget.
