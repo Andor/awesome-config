@@ -6,6 +6,7 @@
 
 local setmetatable = setmetatable
 local type = type
+local pairs = pairs
 local capi = { widget = widget,
                timer = timer }
 
@@ -27,6 +28,7 @@ function new(args)
     if args.update_function and type(args.update_function) == "function" then
        local update = args.update_function
        local timer = capi.timer { timeout = timeout }
+       w.update = function() w.text = update() end
        w.text = update()
        timer:add_signal("timeout", function() w.text = update() end)
        timer:start()

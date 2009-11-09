@@ -15,6 +15,7 @@ module("lib.util")
 -- Функция чтения файла целиком
 function file_read(fname)
    local f = io.open(fname, "r")
+   if not f then return nil end
    local data = f:read("*a")
    f:close()
    return data
@@ -23,6 +24,7 @@ end
 function log(name, data)
    local text = ""
    local data = data or ""
+   local log = log
 
    if type(data) == "table" then
       text = text .. "{" .. tostring(data):gsub("%s", "") .. ":"
