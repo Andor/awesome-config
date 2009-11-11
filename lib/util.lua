@@ -27,7 +27,7 @@ function log(name, data)
    local log = log
 
    local t = type(data)
-   if t == "table" or t == "widget" then
+   if t == "table" then
       text = text .. "{" .. tostring(data):gsub("%s", "") .. ":"
       local k, v
       for k, v in pairs(data) do

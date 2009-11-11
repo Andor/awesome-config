@@ -202,8 +202,6 @@ mybattery = lib.widget.text({ align = "left", timeout = 10,
 -- batterytip = lib.widget.text({ align = "left" })
 -- mybattery:add_signal("mouse::enter", function() end)
 -- mybattery:add_signal("mouse::leave", function() end)
-myweather = weather({ city = 27612, -- Moscow
-		      timeout = 60})
 
 -- нормальный вид часов, а не дефолтный
 mytextclock = awful.widget.textclock({align = "left"}, " %Y.%m.%d, %A, %T ", 1)
@@ -275,6 +273,11 @@ mytasklist = awful.widget.tasklist(function(c)
 -- Трей
 mysystray = widget({ type = "systray" })
 
+
+-- Погода же.
+myweather = weather({ city = 27612 }) -- Moscow
+
+--awful.widget.wibox.stretch(myweather)
 mywibox = awful.wibox({ position = "top", screen = 1 })
 -- виджеты панельки
 mywibox.widgets = {

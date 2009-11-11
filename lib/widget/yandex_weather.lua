@@ -22,8 +22,6 @@ local capi = {
    widget = widget,
    wibox = wibox,
 }
-require("lib.util")
-local log = lib.util.log
 
 module("lib.widget.yandex_weather")
 
@@ -31,10 +29,9 @@ module("lib.widget.yandex_weather")
 local data = {}
 PROXY = os.getenv("http_proxy") or nil
 
-local function image(data, path)
-   local image = data
+local function update_image(path)
    local cache = awful.util.getdir("cache") .. "/weather/" .. string.gsub(path, "/", "__")
-   if not image or not data.image_path or data.image_path ~= path then
+   if not data.image or not data.image_path or data.image_path ~= path then
       -- проверить, есть ли картинка в дисковом кеше
       if not awful.util.file_readable(cache) then
 	 awful.util.mkdir(string.gsub(cache, "(.*)/.*$", "%1"))
@@ -46,13 +43,12 @@ local function image(data, path)
 	 f:flush()
 	 f:close()
       end
-      -- загрузка картинки в кеш в памяти
-      data.image = capi.image(cache)
-      data.image_path = path
+      data.path = path
+      return capi.image(cache)
    end
 end
 
-local function update(data)
+local function update()
    local request = "http://export.yandex.ru/weather/?city=" .. data.city
    local text = http.request(request)
    if not text then return end
@@ -64,15 +60,12 @@ local function update(data)
 	 data.weather[v] = tostring(param[1]) or nil
       end
    end
-   local text = ""
-   text = text .. "температура: " .. data.weather.temperature
-
-   image(data, data.weather.image2)
-   local myimagebox = capi.widget({ type="imagebox", image = data.image })
-   local mytextbox = capi.widget({ type="textbox", text = text })
-   data.wibox.widgets = { mytextbox, myimagebox }
-
-   log("weather", data)
+   local text = data.weather.temperature .. ""
+   local image = update_image(data.weather.image2)
+   if image then data.image = image end
+      
+   data.w.imagebox.image = data.image
+   data.w.textbox.text = text
 end
 
 function new(args)
@@ -84,11 +77,14 @@ function new(args)
       weather = {},
       city = tostring(city),
    }
-   local w = capi.wibox(args)
-   data.wibox = w
-   local timer = timer({ timeout = args.timeout or 60 })
-   timer:add_signal("timeout", function() update(data) end)
-   timer:start()
+   local w = { layout = awful.widget.layout.horizontal.leftright,
+	       textbox = capi.widget({ type = "textbox",
+				       bg_resize = true }),
+	       imagebox = capi.widget({ type="imagebox" }) }
+   data.w = w
+   data.timer = timer({ timeout = args.timeout or 60 })
+   data.timer:add_signal("timeout", function() update(data) end)
+   data.timer:start()
    update(data)
    return w
 end
