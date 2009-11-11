@@ -29,24 +29,22 @@ module("lib.widget.yandex_weather")
 local data = {}
 PROXY = os.getenv("http_proxy") or nil
 
+-- Функция загрузки картинки во внутренние данные модуля.
 local function update_image(path)
    if data.path == path then return end
    local cache = awful.util.getdir("cache") .. "/weather/" .. string.gsub(path, "/", "__")
    -- проверить, есть ли картинка в дисковом кеше
    if not awful.util.file_readable(cache) then
-      awful.util.mkdir(string.gsub(cache, "(.*)/.*$", "%1"))
       -- загрузка картинки в дисковый кеш
       local data = http.request(path)
       if not data then return nil end
-      local f = io.open(cache, "w")
-      f:write(data)
-      f:flush()
-      f:close()
+      file_write(cache, data, { mkdir = true })
    end
    data.path = path
    return capi.image(cache)
 end
 
+-- Функция обновления виджетов текста и картинки.
 local function update()
    local request = "http://export.yandex.ru/weather/?city=" .. data.city
    local text = http.request(request)
@@ -67,6 +65,7 @@ local function update()
    data.w.textbox.text = text
 end
 
+-- Создание виджета погоды.
 function new(args)
    local args = args or {}
    local city = args.city or 27612 -- Moscow
@@ -76,15 +75,14 @@ function new(args)
       weather = {},
       city = tostring(city),
    }
-   local w = { layout = awful.widget.layout.horizontal.leftright,
+   data.w = { layout = awful.widget.layout.horizontal.leftright,
 	       textbox = capi.widget({ type = "textbox" }),
 	       imagebox = capi.widget({ type = "imagebox" }) }
-   data.w = w
    data.timer = timer({ timeout = args.timeout or 60 })
    data.timer:add_signal("timeout", function() update(data) end)
    data.timer:start()
    update(data)
-   return w.textbox, w.imagebox
+   return { layout = awful.widget.layout.horizontal.leftright, data.w.textbox, data.w.imagebox }
 end
 
 setmetatable(_M, { __call = function(_, ...) return new(...) end })

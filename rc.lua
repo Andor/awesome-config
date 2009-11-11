@@ -25,7 +25,7 @@ local math = math
 local awful = require("awful")
 local beautiful = beautiful
 local tostring, tonumber = tostring, tonumber
-local configdir = os.getenv("HOME") .. "/.config/awesome"
+configdir = os.getenv("HOME") .. "/.config/awesome"
 package.cpath = configdir .. "/contrib/LuaXml/?.so;" .. package.cpath
 local log = util.log
 local text = require("lib.widget.text")
@@ -69,139 +69,24 @@ layouts = {
    awful.layout.suit.floating
 }
 
--- функция получения текста трафика на интерфейсе
-function get_traffic(interface)
-   local int = tostring(interface) or "eth0"
-
-   local rx = util.file_read("/sys/class/net/" .. int .. "/statistics/rx_bytes")
-   local tx = util.file_read("/sys/class/net/" .. int .. "/statistics/tx_bytes")
-
-   local text = "[" .. int .. ":"
-   local number, mod = "None", ""
-   if tx and rx then
-      number = (tonumber(rx)+tonumber(tx))
-      if number > 10*1024 then
-	 number = number/1024
-	 if number > 10*1024 then
-	    number = number/1024
-	    if number > 10*1024 then
-	       number = number/1024
-	       mod = "g"
-	    else
-	       mod = "m"
-	    end
-	 else
-	    mod = "k"
-	 end
-      else
-	 mod = "b"
-      end
-      number = math.floor(number)
-   end
-   text = text .. number .. mod .. "]"
-   data = {
-      int = int,
-      tx = tx,
-      rx = rx,
-      sum = number,
-      mod = mod }
-   return text
-end
-
--- функция получения заряда батареи
-function battery_status(battery)
-   local current, total, rate, state, warning = 0, 0, 0, 0, false
-   local battery = battery or 0
-   battery = tostring(battery)
-
-   local fbatstate = io.open("/proc/acpi/battery/BAT".. battery .."/state", "r")
-   local fbatinfo = io.open("/proc/acpi/battery/BAT".. battery .. "/info", "r")
-   if fbatstate then
-      -- Получение текущего заряда, скорости разрядки и состояния.
-      for l in fbatstate:lines("/proc/acpi/battery/BAT".. battery .."/state") do
-	 if l:match("remaining capacity:") then current = l:gsub("remaining capacity:%s*(%d+) mAh$", "%1") end
-	 if l:match("present rate:") then rate = l:gsub("present rate:%s*(%d+) mA$", "%1") end
-	 if l:match("charging state:") then state = l:gsub("charging state:%s*(%S+)$", "%1") end
-      end
-      fbatstate:close() 
-   end
-
-   if fbatinfo then
-      -- Получение максимального заряда и уровня опасного зазряда.
-      for l in fbatinfo:lines("/proc/acpi/battery/BAT".. battery .. "/info") do
-	 if l:match("last full capacity:") then total = l:gsub("last full capacity:%s*(%d+) mAh$", "%1") end
-	 if l:match("design capacity warning:") then
-	    if tonumber(current) <= tonumber(l:gsub("design capacity warning:%s*(%d+) mAh$", "%1"), 10 ) then
-	       warning = true else warning = false
-	    end
-	 end
-      end
-      fbatinfo:close() 
-   end
-
-   total = tonumber(total) or 0
-   current = tonumber(current) or 0
-   rate = tonumber(rate) or 0
-
-   -- Подсчёт оставшегося времени.
-   local elapsed = "00:00"
-   if rate ~= 0 then
-      elapsed = os.date("!%H:%M", (current/rate)*3600)
-   end
-
-   -- Подсчёт процентов разряда.
-   local percent = math.floor(current/total*100)
-   if percent > 100 then percent = 100 end
-   if percent < 0 then percent = 0 end
-
-   -- Обновление данных.
-   local data = {
-      battery = battery,
-      current = current,
-      rate = rate,
-      total = total,
-      state = state,
-      warning = warning,
-      percent = percent,
-      elapsed = elapsed}
-   return data
-end
-
+-- загрузка индикатора сети
+require("lib.hw.network")
 -- виджет индикатора ppp0
-myppp0 = lib.widget.text({ align = "left", timeout = 10, update_function = function() return get_traffic("ppp0") end })
--- виджет индикатора заряда батареи
-mybattery = lib.widget.text({ align = "left", timeout = 10,
-			      update_function = function()
-						   local data = battery_status(0)
-						   local btheme = beautiful.get()
-						   theme = btheme.battery or {}
-						   theme.warning = btheme.battery.warning or "red"
-						   theme.charging = btheme.battery.charging or "green"
-						   theme.discharging = btheme.battery.discharging or "yellow"
-						   theme.charged = btheme.battery.charged or btheme.fg_normal or "white"
-						   
-						   -- Получение цвета.
-						   local color
-						   if warning then
-						      color = theme.warning
-						   else
-						      color = theme[data.state] or theme.charged or "white"
-						   end
-						   
-						   -- Гламурная стрелочка.
-						   local arrow
-						   if data.state == "charging" then
-						      arrow = "↑"
-						   else if data.state == "discharging" then
-							 arrow = "↓"
-						      end
-						   end
-						   if arrow then arrow = arrow .. " " else arrow = "" end
-						   return "[Bat" .. data.battery .. ":" .. arrow .. "<span color='" .. color .. "'>" .. data.percent .. "%</span>] "
-						end })
+myppp0 = lib.widget.text({ align = "left", timeout = 10, update_function = function() return get_interface_data("ppp0").text end })
 -- batterytip = lib.widget.text({ align = "left" })
 -- mybattery:add_signal("mouse::enter", function() end)
 -- mybattery:add_signal("mouse::leave", function() end)
+
+-- загрузка индикатора батареи
+require("lib.hw.battery")
+-- виджет индикатора заряда батареи
+mybattery = lib.widget.text({ align = "left", timeout = 10, update_function = get_battery_text })
+
+-- Трей
+mysystray = widget({ type = "systray" })
+
+-- Погода же.
+myweather = weather({ city = 27612 }) -- Moscow aka Москва
 
 -- нормальный вид часов, а не дефолтный
 mytextclock = awful.widget.textclock({align = "left"}, " %Y.%m.%d, %A, %T ", 1)
@@ -270,12 +155,6 @@ mytasklist = awful.widget.tasklist(function(c)
 				      return text, bg, nil, icon
 				   end,
 				   mytasklist.buttons)
--- Трей
-mysystray = widget({ type = "systray" })
-
-
--- Погода же.
-myweathertext, myweathericon = weather({ city = 27612 }) -- Moscow
 
 --awful.widget.wibox.stretch(myweather)
 mywibox = awful.wibox({ position = "top", screen = 1 })
@@ -283,8 +162,7 @@ mywibox = awful.wibox({ position = "top", screen = 1 })
 mywibox.widgets = {
    { mytaglist,
      mybattery,
-     myweathertext, 
-     myweathericon,
+     myweather,
      mypromptbox,
      layout = awful.widget.layout.horizontal.leftright },
    mylayoutbox,

@@ -21,27 +21,43 @@ function file_read(fname)
    return data
 end
 
+-- Функция записи целиком в файл
+function file_write(fname, data, params)
+   if not data then return nil end
+   local params = params or {}
+   local mode = params.mode or "w"
+   if params.mkdir then
+      local dir = string.gsub(fname, "(.*)/.*$", "%1")
+      os.execute("mkdir -p " .. dir)
+   end
+   local f = io.open(fname, mode)
+   if not f then return nil end
+   f:write(data)
+   f:flush()
+   f:close()
+end
+
+-- Функция ведения лога
 function log(name, data)
    local text = ""
    local data = data or ""
-   local log = log
+   local log = log -- for recursion
 
-   local t = type(data)
-   if t == "table" then
+   if type(data) == "table" then
       text = text .. "{" .. tostring(data):gsub("%s", "") .. ":"
       local k, v
       for k, v in pairs(data) do
-	 text = text .. "[ " .. tostring(k) .. "=>" .. log(nil, v) .. " ]"
+	 text = text .. "[ " .. tostring(k) .. "=>" .. log(nil, v) .. " ]" -- recursion
       end
       text = text .. "}"
    else
       text = text .. tostring(data)
    end
 
-   if name == nil then return text end
+   if name == nil then return text end -- exit from recursion
 
-   local name = tostring(name) or "awesome"
-   log = io.open(os.getenv("HOME") .. "/" .. name .. ".log", "a")
-   log:write(os.date("%H:%M:%S") .. ": " .. text .. ";\n")
-   log:close()
+   local name = tostring(name) or "log"
+   fname = os.getenv("HOME") .. "/.awesome-" .. name .. ".log"
+   text = os.date("%H:%M:%S") .. ": " .. text .. ";\n"
+   return file_write(fname, text, { mode = "w" })
 end
