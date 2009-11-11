@@ -30,22 +30,21 @@ local data = {}
 PROXY = os.getenv("http_proxy") or nil
 
 local function update_image(path)
+   if data.path == path then return end
    local cache = awful.util.getdir("cache") .. "/weather/" .. string.gsub(path, "/", "__")
-   if not data.image or not data.image_path or data.image_path ~= path then
-      -- проверить, есть ли картинка в дисковом кеше
-      if not awful.util.file_readable(cache) then
-	 awful.util.mkdir(string.gsub(cache, "(.*)/.*$", "%1"))
-	 -- загрузка картинки в дисковый кеш
-	 local data = http.request(path)
-	 if not data then return nil end
-	 local f = io.open(cache, "w")
-	 f:write(data)
-	 f:flush()
-	 f:close()
-      end
-      data.path = path
-      return capi.image(cache)
+   -- проверить, есть ли картинка в дисковом кеше
+   if not awful.util.file_readable(cache) then
+      awful.util.mkdir(string.gsub(cache, "(.*)/.*$", "%1"))
+      -- загрузка картинки в дисковый кеш
+      local data = http.request(path)
+      if not data then return nil end
+      local f = io.open(cache, "w")
+      f:write(data)
+      f:flush()
+      f:close()
    end
+   data.path = path
+   return capi.image(cache)
 end
 
 local function update()
@@ -60,7 +59,7 @@ local function update()
 	 data.weather[v] = tostring(param[1]) or nil
       end
    end
-   local text = data.weather.temperature .. ""
+   local text = data.weather.temperature .. "°"
    local image = update_image(data.weather.image2)
    if image then data.image = image end
       
@@ -78,15 +77,14 @@ function new(args)
       city = tostring(city),
    }
    local w = { layout = awful.widget.layout.horizontal.leftright,
-	       textbox = capi.widget({ type = "textbox",
-				       bg_resize = true }),
-	       imagebox = capi.widget({ type="imagebox" }) }
+	       textbox = capi.widget({ type = "textbox" }),
+	       imagebox = capi.widget({ type = "imagebox" }) }
    data.w = w
    data.timer = timer({ timeout = args.timeout or 60 })
    data.timer:add_signal("timeout", function() update(data) end)
    data.timer:start()
    update(data)
-   return w
+   return w.textbox, w.imagebox
 end
 
 setmetatable(_M, { __call = function(_, ...) return new(...) end })

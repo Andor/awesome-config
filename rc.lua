@@ -275,7 +275,7 @@ mysystray = widget({ type = "systray" })
 
 
 -- Погода же.
-myweather = weather({ city = 27612 }) -- Moscow
+myweather,  aaa = weather({ city = 27612 }) -- Moscow
 
 --awful.widget.wibox.stretch(myweather)
 mywibox = awful.wibox({ position = "top", screen = 1 })
@@ -287,7 +287,7 @@ mywibox.widgets = {
      layout = awful.widget.layout.horizontal.leftright },
    mylayoutbox,
    mytextclock,
-   myweather,
+   aaa, myweather,
    myppp0,
    mysystray,
    mytasklist,
