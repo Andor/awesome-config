@@ -289,6 +289,7 @@ mywibox.widgets = {
    mysystray,
    mytasklist,
    layout = awful.widget.layout.horizontal.rightleft }
+-- log("weather", myweather.widgets)
 
 -- {{{ Mouse bindings
 root.buttons(awful.util.table.join(
