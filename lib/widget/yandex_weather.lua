@@ -38,7 +38,7 @@ local function update_image(path)
       -- загрузка картинки в дисковый кеш
       local data = http.request(path)
       if not data then return nil end
-      file_write(cache, data, { mkdir = true })
+      util.file_write(cache, data, { mkdir = true })
    end
    data.path = path
    return capi.image(cache)

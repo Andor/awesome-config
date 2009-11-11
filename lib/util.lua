@@ -7,6 +7,7 @@ local io = io
 local os = os
 local pairs = pairs
 local tostring = tostring
+local string = string
 local type = type
 local setmetatable = setmetatable
 
