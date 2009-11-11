@@ -2,7 +2,10 @@
 -- @author Stiletto &lt;blasux@blasux.ru&gt;
 -- @copyright 2009 Stiletto
 -- @release v0.1
--- @license WTFPL ( http://sam.zoy.org/wtfpl/COPYING )
+-- @license GPLv3
+--   (Потому что блядская вирусность GPL не дает порелизить
+--    мне этот скрипт под WTFPL ( http://sam.zoy.org/wtfpl/COPYING ) т.к.
+--    он использует библиотеки Андора, которые под GPLv3.)
 ---------------------------------------------------------------------------
 local setmetatable = setmetatable
 local awful = awful
