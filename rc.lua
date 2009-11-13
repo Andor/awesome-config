@@ -44,7 +44,7 @@ modkey = "Mod4"
 tags = {}
 tags[1] = awful.tag({ "term", "browser", "mail", "others" }, 1)
 for i = 2, screen.count() do
-   tags[i] = {}
+   tags[i] = awful.tag({ "all" }, i)
 end
 
 -- Менюшка
