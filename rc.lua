@@ -29,14 +29,14 @@ configdir = os.getenv("HOME") .. "/.config/awesome"
 package.cpath = configdir .. "/contrib/LuaXml/?.so;" .. package.cpath
 local log = util.log
 local text = require("lib.widget.text")
-local weather = require("lib.widget.yandex_weather")
+-- local weather = require("lib.widget.yandex_weather")
 
 -- Установка темы
 beautiful.init(configdir .. "/theme.lua")
 
 -- настройки терминала и редактора
-terminal = "urxvt"
-editor = "vim"
+terminal = "konsole"
+editor = "emacs"
 editor_cmd = terminal .. " -e " .. editor
 
 modkey = "Mod4"
@@ -48,10 +48,15 @@ for i = 2, screen.count() do
 end
 
 -- Менюшка
-mymainmenu = awful.menu({ items =
-			  { { "restart", awesome.restart },
-			    { "open terminal", terminal },
-			    { "edit config", editor_cmd .. " " .. awful.util.getdir("config") .. "/rc.lua"  } } })
+mymainmenu = awful.menu( {
+      items = {
+	 { "open terminal", terminal },
+	 { "edit config", editor_cmd .. " " .. awful.util.getdir("config") .. "/rc.lua"  },
+	 { "restart", awesome.restart },
+	 { "quit", awesome.quit }
+      }
+   }
+		      )
 
 -- Список раскладок окон.
 layouts = {
@@ -86,7 +91,7 @@ mybattery = lib.widget.text({ align = "left", timeout = 10, update_function = ge
 mysystray = widget({ type = "systray" })
 
 -- Погода же.
-myweather = weather({ city = 27612 }) -- Moscow aka Москва
+-- myweather = weather({ city = 27612 }) -- Moscow aka Москва
 
 -- нормальный вид часов, а не дефолтный
 mytextclock = awful.widget.textclock({align = "left"}, " %Y.%m.%d, %A, %T ", 1)
@@ -162,12 +167,12 @@ mywibox = awful.wibox({ position = "top", screen = 1 })
 mywibox.widgets = {
    { mytaglist,
      mybattery,
-     myweather,
+--     myweather,
      mypromptbox,
      layout = awful.widget.layout.horizontal.leftright },
    mylayoutbox,
    mytextclock,
-   myppp0,
+--   myppp0,
    mysystray,
    mytasklist,
    layout = awful.widget.layout.horizontal.rightleft }
