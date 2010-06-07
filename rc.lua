@@ -44,7 +44,7 @@ modkey = "Mod4"
 tags = {}
 tags[1] = awful.tag({ "term", "browser", "mail", "others" }, 1)
 for i = 2, screen.count() do
-   tags[i] = awful.tag({ "all" }, i)
+   tags[i] = awful.tag({ "all" }, i, awful.layout.suit.float)
 end
 
 -- Менюшка
@@ -232,9 +232,8 @@ globalkeys = awful.util.table.join(
     awful.key({ modkey,           }, "space", function () awful.layout.inc(layouts,  1) end),
     awful.key({ modkey, "Shift"   }, "space", function () awful.layout.inc(layouts, -1) end),
 
-    -- Prompt
---    awful.key({ "Alt"  },            "F2",    function () mypromptbox:run() end),
-    awful.key({ modkey },            "F2",    function () mypromptbox:run() end),
+    -- Prompt, Alt+F2
+    awful.key({ "Mod1" },            "F2",    function () mypromptbox:run() end),
 
     awful.key({ modkey }, "x",
               function ()
@@ -361,5 +360,16 @@ client.add_signal("focus", function(c) c.border_color = beautiful.border_focus e
 client.add_signal("unfocus", function(c) c.border_color = beautiful.border_normal end)
 -- }}}
 
--- ну и напоследок
-awful.util.spawn("xset r rate 200 70")
+-- Autorun program
+autorun = true
+autorunApps = { 
+   "klipper",
+   "xset r rate 200 70",
+   "setxkbmap -layout us,ru -variant ,winkeys -option grp:caps_toggle,compose:ralt",
+   "wpa_gui"
+}
+if autorun then
+   for app = 1, #autorunApps do
+      awful.util.spawn(autorunApps[app])
+   end
+end
