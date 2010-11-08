@@ -38,7 +38,7 @@ module('lib.widget.midnight')
 local function update()
     local dt = os.date("*t")
     local color = "green"
-    if ((dt.hour)>22) or ((dt.hour)<4) then
+    if ((dt.hour)>=22) or ((dt.hour)<=4) then
         -- if (((dt.hour)==23) and ((dt.min)>30)) or (((dt.hour)==0) and ((dt.min)<30)) then
         if ((dt.hour)==23) or ((dt.hour)==0) then
             color = "red"
