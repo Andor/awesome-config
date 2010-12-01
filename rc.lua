@@ -36,15 +36,15 @@ beautiful.init(configdir .. "/theme.lua")
 
 -- настройки терминала и редактора
 terminal = "konsole"
-editor = "emacs"
-editor_cmd = terminal .. " -e " .. editor
+editor = "emacsclient -c"
+editor_cmd = editor
 
 modkey = "Mod4"
 
 tags = {}
-tags[1] = awful.tag({ "term", "browser", "mail", "others" }, 1)
+tags[1] = awful.tag({ "e", "t", "b", "1", "2"}, 1)
 for i = 2, screen.count() do
-   tags[i] = awful.tag({ "all" }, i, awful.layout.suit.float)
+   tags[i] = awful.tag({ "all" }, i, awful.layout.suit.max)
 end
 
 -- Менюшка
@@ -77,7 +77,7 @@ layouts = {
 -- загрузка индикатора сети
 require("lib.hw.network")
 -- виджет индикатора ppp0
-myppp0 = lib.widget.text({ align = "left", timeout = 10, update_function = function() return get_interface_data("ppp0").text end })
+-- myppp0 = lib.widget.text({ align = "left", timeout = 10, callback = function() return get_interface_data("ppp0").text end })
 -- batterytip = lib.widget.text({ align = "left" })
 -- mybattery:add_signal("mouse::enter", function() end)
 -- mybattery:add_signal("mouse::leave", function() end)
@@ -85,7 +85,7 @@ myppp0 = lib.widget.text({ align = "left", timeout = 10, update_function = funct
 -- загрузка индикатора батареи
 require("lib.hw.battery")
 -- виджет индикатора заряда батареи
-mybattery = lib.widget.text({ align = "left", timeout = 10, update_function = get_battery_text })
+mybattery = lib.widget.text({ align = "left", timeout = 10, callback = get_battery_text })
 
 -- Трей
 mysystray = widget({ type = "systray" })
@@ -313,19 +313,38 @@ awful.rules.rules = {
     { rule = { },
       properties = { border_width = beautiful.border_width,
                      border_color = beautiful.border_normal,
+                     floating = true,
                      focus = true,
                      keys = clientkeys,
-                     buttons = clientbuttons } },
-    { rule = { class = "MPlayer" },
-      properties = { floating = true } },
-    { rule = { class = "pinentry" },
-      properties = { floating = true } },
-    { rule = { class = "gimp" },
-      properties = { floating = true } },
-    { rule = { class = "URxvt" },
-      properties = { maximized_vertical = true, maximized_horizontal = true, tag = tags[1][1] } },
+                     buttons = clientbuttons
+      } },
+    { rule = { class = "Emacs" },
+      properties = {
+         tag = tags[1][1],
+         floating = false,
+         maximized_vertical = true,
+         maximized_horizontal = true,
+      } },
+    { rule = { class = "Konsole" },
+      properties = {
+         tag = tags[1][2],
+         maximized_vertical = true,
+         maximized_horizontal = true,
+      } },
     { rule = { class = "Firefox" },
-      properties = { tag = tags[1][2] } },
+      properties = {
+         tag = tags[1][3],
+         floating = false,
+         maximized_vertical = true,
+         maximized_horizontal = true,
+      } },
+    { rule = { class = "Opera" },
+      properties = {
+         tag = tags[1][3],
+         floating = false,
+         maximized_vertical = true,
+         maximized_horizontal = true
+      } },
 }
 -- }}}
 
@@ -362,11 +381,11 @@ client.add_signal("unfocus", function(c) c.border_color = beautiful.border_norma
 
 -- Autorun program
 autorun = true
-autorunApps = { 
-   "klipper",
+autorunApps = {
    "xset r rate 200 70",
-   "setxkbmap -layout us,ru -variant ,winkeys -option grp:caps_toggle,compose:ralt",
-   "wpa_gui"
+   "xset s 300",
+   "xset +dpms",
+   "klipper",
 }
 if autorun then
    for app = 1, #autorunApps do
