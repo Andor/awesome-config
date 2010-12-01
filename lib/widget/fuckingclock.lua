@@ -90,7 +90,7 @@ end
 function new(args)
     local args = args or {}
     local mytimeout = args.timeout or 60
-    local widget = text.new({ timeout = mytimeout, update_function = update })
+    local widget = text.new({ timeout = mytimeout, callback = update })
     return widget
 end
 

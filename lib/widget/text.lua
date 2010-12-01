@@ -25,8 +25,8 @@ function new(args)
     args.type = "textbox"
     local w = capi.widget(args)
 
-    if args.update_function and type(args.update_function) == "function" then
-       local update = args.update_function
+    if args.callback and type(args.callback) == "function" then
+       local update = args.callback
        local timer = capi.timer { timeout = timeout }
        w.update = function() w.text = update() end
        w.text = update()
