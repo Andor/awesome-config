@@ -386,6 +386,8 @@ autorunApps = {
    "xset s 300",
    "xset +dpms",
    "klipper",
+   "skype",
+   "wpa_gui"
 }
 if autorun then
    for app = 1, #autorunApps do
