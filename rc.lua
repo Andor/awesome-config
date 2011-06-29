@@ -29,7 +29,7 @@ configdir = os.getenv("HOME") .. "/.config/awesome"
 package.cpath = configdir .. "/contrib/LuaXml/?.so;" .. package.cpath
 local log = util.log
 local text = require("lib.widget.text")
--- local weather = require("lib.widget.yandex_weather")
+local weather = require("lib.widget.yandex_weather")
 
 -- Установка темы
 beautiful.init(configdir .. "/theme.lua")
@@ -91,7 +91,7 @@ mybattery = lib.widget.text({ align = "left", timeout = 10, callback = get_batte
 mysystray = widget({ type = "systray" })
 
 -- Погода же.
--- myweather = weather({ city = 27612 }) -- Moscow aka Москва
+myweather = weather({ city = 27510 }) -- Korolev, Moscow region
 
 -- нормальный вид часов, а не дефолтный
 mytextclock = awful.widget.textclock({align = "left"}, " %Y.%m.%d, %A, %T ", 1)
@@ -161,13 +161,13 @@ mytasklist = awful.widget.tasklist(function(c)
 				   end,
 				   mytasklist.buttons)
 
---awful.widget.wibox.stretch(myweather)
+-- awful.widget.wibox.stretch(myweather)
 mywibox = awful.wibox({ position = "top", screen = 1 })
 -- виджеты панельки
 mywibox.widgets = {
    { mytaglist,
      mybattery,
---     myweather,
+     myweather,
      mypromptbox,
      layout = awful.widget.layout.horizontal.leftright },
    mylayoutbox,
