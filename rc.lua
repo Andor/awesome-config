@@ -16,12 +16,42 @@ require("beautiful")
 -- Notification library
 require("naughty")
 
-local util = require("lib.util")
-local os = os
+-- {{{ Error handling
+-- Check if awesome encountered an error during startup and fell back to
+-- another config (This code will only ever execute for the fallback config)
+if awesome.startup_errors then
+    naughty.notify({ preset = naughty.config.presets.critical,
+                     title = "Oops, there were errors during startup!",
+                     text = awesome.startup_errors })
+end
+
+-- Handle runtime errors after startup
+do
+    local in_error = false
+    awesome.add_signal("debug::error", function (err)
+        -- Make sure we don't go into an endless error loop
+        if in_error then return end
+        in_error = true
+
+        naughty.notify({ preset = naughty.config.presets.critical,
+                         title = "Oops, an error happened!",
+                         text = err })
+        in_error = false
+    end)
+end
+-- }}}
+
+-- {{{ Variable definitions
+-- Установка темы
+beautiful.init(configdir .. "/theme.lua")
+
+-- Переменные для последующего использования
+terminal = "konsole"
+editor = "emacsclient -c"
+editor_cmd = editor
 
 -- Загрузка модулей
-local io = io
-local math = math
+local util = require("lib.util")
 local awful = require("awful")
 local beautiful = beautiful
 local tostring, tonumber = tostring, tonumber
@@ -29,25 +59,47 @@ configdir = os.getenv("HOME") .. "/.config/awesome"
 package.cpath = configdir .. "/contrib/LuaXml/?.so;" .. package.cpath
 local log = util.log
 local text = require("lib.widget.text")
-local weather = require("lib.widget.yandex_weather")
+-- local weather = require("lib.widget.yandex_weather")
 
--- Установка темы
-beautiful.init(configdir .. "/theme.lua")
+-- загрузка индикатора сети
+-- require("lib.hw.network")
+-- batterytip = lib.widget.text({ align = "left" })
+-- mybattery:add_signal("mouse::enter", function() end)
+-- mybattery:add_signal("mouse::leave", function() end)
 
--- настройки терминала и редактора
-terminal = "konsole"
-editor = "emacsclient -c"
-editor_cmd = editor
-
+-- загрузка индикатора батареи
+require("lib.hw.battery")
+-- виджет индикатора заряда батареи
+mybattery = lib.widget.text({ align = "left", timeout = 10, callback = get_battery_text })
 modkey = "Mod4"
 
+-- Список раскладок окон.
+layouts =
+{
+    awful.layout.suit.floating,
+    awful.layout.suit.tile,
+    -- awful.layout.suit.tile.left,
+    -- awful.layout.suit.tile.bottom,
+    -- awful.layout.suit.tile.top,
+    awful.layout.suit.fair,
+    -- awful.layout.suit.fair.horizontal,
+    -- awful.layout.suit.spiral,
+    -- awful.layout.suit.spiral.dwindle,
+    awful.layout.suit.max,
+    awful.layout.suit.max.fullscreen,
+    awful.layout.suit.magnifier
+}
+-- }}}
+
+-- {{{ Tags
 tags = {}
 tags[1] = awful.tag({ "e", "t", "b", "1", "2"}, 1)
 for i = 2, screen.count() do
-   tags[i] = awful.tag({ "all" }, i, awful.layout.suit.max)
+    tags[i] = awful.tag({ "all" }, i, awful.layout.suit.max)
 end
+-- }}}
 
--- Менюшка
+-- {{{ Менюшка
 mymainmenu = awful.menu( {
       items = {
 	 { "open terminal", terminal },
@@ -58,46 +110,22 @@ mymainmenu = awful.menu( {
    }
 		      )
 
--- Список раскладок окон.
-layouts = {
-   awful.layout.suit.tile,
-   -- awful.layout.suit.tile.left,
-   -- awful.layout.suit.tile.bottom,
-   -- awful.layout.suit.tile.top,
-   awful.layout.suit.fair,
-   -- awful.layout.suit.fair.horizontal,
-   -- awful.layout.suit.spiral,
-   -- awful.layout.suit.spiral.dwindle,
-   awful.layout.suit.max,
-   awful.layout.suit.max.fullscreen,
-   awful.layout.suit.magnifier,
-   awful.layout.suit.floating
-}
 
--- загрузка индикатора сети
-require("lib.hw.network")
--- виджет индикатора ppp0
--- myppp0 = lib.widget.text({ align = "left", timeout = 10, callback = function() return get_interface_data("ppp0").text end })
--- batterytip = lib.widget.text({ align = "left" })
--- mybattery:add_signal("mouse::enter", function() end)
--- mybattery:add_signal("mouse::leave", function() end)
 
--- загрузка индикатора батареи
-require("lib.hw.battery")
--- виджет индикатора заряда батареи
-mybattery = lib.widget.text({ align = "left", timeout = 10, callback = get_battery_text })
+-- }}}
+
+-- {{{ Wibox
+-- нормальный вид часов, а не дефолтный
+mytextclock = awful.widget.textclock({align = "left"}, " %Y.%m.%d, %A, %T ", 1)
 
 -- Трей
 mysystray = widget({ type = "systray" })
 
--- Погода же.
-myweather = weather({ city = 27510 }) -- Korolev, Moscow region
-
--- нормальный вид часов, а не дефолтный
-mytextclock = awful.widget.textclock({align = "left"}, " %Y.%m.%d, %A, %T ", 1)
-
 -- панелька
--- Create a wibox for each screen and add it
+
+-- Погода же.
+--myweather = weather({ city = 27510 }) -- Korolev, Moscow region
+
 mywibox = {}
 mypromptbox = {}
 mylayoutbox = {}
@@ -111,33 +139,21 @@ mytaglist.buttons = awful.util.table.join(
                     awful.button({ }, 5, awful.tag.viewprev)
                     )
 
--- изменение панели экрана
-mypromptbox = awful.widget.prompt({ layout = awful.widget.layout.horizontal.leftright })
-mylayoutbox = awful.widget.layoutbox(1)
-mylayoutbox:buttons(awful.util.table.join(
-		       awful.button({ }, 1, function () awful.layout.inc(layouts, 1) end),
-		       awful.button({ }, 3, function () awful.layout.inc(layouts, -1) end),
-		       awful.button({ }, 4, function () awful.layout.inc(layouts, 1) end),
-		       awful.button({ }, 5, function () awful.layout.inc(layouts, -1) end)))
-mytaglist = awful.widget.taglist(1, awful.widget.taglist.label.all, mytaglist.buttons)
-
-mytaglist.buttons = awful.util.table.join(
-                    awful.button({ }, 1, awful.tag.viewonly),
-                    awful.button({ modkey }, 1, awful.client.movetotag),
-                    awful.button({ }, 3, awful.tag.viewtoggle),
-                    awful.button({ modkey }, 3, awful.client.toggletag),
-                    awful.button({ }, 4, awful.tag.viewnext),
-                    awful.button({ }, 5, awful.tag.viewprev)                     )
-
 -- панель задач
 mytasklist = {}
 mytasklist.buttons = awful.util.table.join(
                      awful.button({ }, 1, function (c)
-                                              if not c:isvisible() then
-                                                  awful.tag.viewonly(c:tags()[1])
+                                              if c == client.focus then
+                                                  c.minimized = true
+                                              else
+                                                  if not c:isvisible() then
+                                                      awful.tag.viewonly(c:tags()[1])
+                                                  end
+                                                  -- This will also un-minimize
+                                                  -- the client, if needed
+                                                  client.focus = c
+                                                  c:raise()
                                               end
-                                              client.focus = c
-                                              c:raise()
                                           end),
                      awful.button({ }, 3, function ()
                                               if instance then
@@ -155,28 +171,43 @@ mytasklist.buttons = awful.util.table.join(
                                               awful.client.focus.byidx(-1)
                                               if client.focus then client.focus:raise() end
                                           end))
+
+
+-- изменение панели экрана
+mypromptbox = awful.widget.prompt({ layout = awful.widget.layout.horizontal.leftright })
+mylayoutbox = awful.widget.layoutbox(1)
+mylayoutbox:buttons(awful.util.table.join(
+                           awful.button({ }, 1, function () awful.layout.inc(layouts, 1) end),
+                           awful.button({ }, 3, function () awful.layout.inc(layouts, -1) end),
+                           awful.button({ }, 4, function () awful.layout.inc(layouts, 1) end),
+                           awful.button({ }, 5, function () awful.layout.inc(layouts, -1) end)))
+
+mytaglist = awful.widget.taglist(1, awful.widget.taglist.label.all, mytaglist.buttons)
+
+    -- Create a tasklist widget
 mytasklist = awful.widget.tasklist(function(c)
-				      local text, bg, _, icon = awful.widget.tasklist.label.currenttags(c, 1)
-				      return text, bg, nil, icon
-				   end,
-				   mytasklist.buttons)
+                                              return awful.widget.tasklist.label.currenttags(c, s)
+                                          end, mytasklist.buttons)
 
 -- awful.widget.wibox.stretch(myweather)
 mywibox = awful.wibox({ position = "top", screen = 1 })
 -- виджеты панельки
 mywibox.widgets = {
-   { mytaglist,
-     mybattery,
-     myweather,
-     mypromptbox,
-     layout = awful.widget.layout.horizontal.leftright },
-   mylayoutbox,
-   mytextclock,
---   myppp0,
-   mysystray,
-   mytasklist,
-   layout = awful.widget.layout.horizontal.rightleft }
+        {
+            mytaglist,
+            mybattery,
+            mypromptbox,
+            layout = awful.widget.layout.horizontal.leftright
+        },
+        mylayoutbox,
+        mytextclock,
+        mysystray,
+        mytasklist,
+        layout = awful.widget.layout.horizontal.rightleft
+    }
+
 -- log("weather", myweather.widgets)
+-- }}}
 
 -- {{{ Mouse bindings
 root.buttons(awful.util.table.join(
@@ -185,7 +216,6 @@ root.buttons(awful.util.table.join(
     awful.button({ }, 5, awful.tag.viewprev)
 ))
 -- }}}
-
 
 -- {{{ Key bindings
 globalkeys = awful.util.table.join(
@@ -203,7 +233,7 @@ globalkeys = awful.util.table.join(
             awful.client.focus.byidx(-1)
             if client.focus then client.focus:raise() end
         end),
-    awful.key({ modkey,           }, "w", function () mymainmenu:show(true)        end),
+    awful.key({ modkey,           }, "w", function () mymainmenu:show({keygrabber=true}) end),
 
     -- Layout manipulation
     awful.key({ modkey, "Shift"   }, "j", function () awful.client.swap.byidx(  1)    end),
@@ -223,6 +253,7 @@ globalkeys = awful.util.table.join(
     awful.key({ modkey,           }, "Return", function () awful.util.spawn(terminal) end),
     awful.key({ modkey, "Control" }, "r",     awesome.restart),
     awful.key({ modkey, "Shift"   }, "q",     awesome.quit),
+
     awful.key({ modkey,           }, "l",     function () awful.tag.incmwfact( 0.05)    end),
     awful.key({ modkey,           }, "h",     function () awful.tag.incmwfact(-0.05)    end),
     awful.key({ modkey, "Shift"   }, "h",     function () awful.tag.incnmaster( 1)      end),
@@ -232,7 +263,9 @@ globalkeys = awful.util.table.join(
     awful.key({ modkey,           }, "space", function () awful.layout.inc(layouts,  1) end),
     awful.key({ modkey, "Shift"   }, "space", function () awful.layout.inc(layouts, -1) end),
 
-    -- Prompt, Alt+F2
+    awful.key({ modkey, "Control" }, "n", awful.client.restore),
+
+    -- Prompt
     awful.key({ "Mod1" },            "F2",    function () mypromptbox:run() end),
 
     awful.key({ modkey }, "x",
@@ -251,6 +284,7 @@ clientkeys = awful.util.table.join(
     awful.key({ modkey, "Control" }, "Return", function (c) c:swap(awful.client.getmaster()) end),
     awful.key({ modkey,           }, "o",      awful.client.movetoscreen                        ),
     awful.key({ modkey, "Shift"   }, "r",      function (c) c:redraw()                       end),
+    awful.key({ modkey,           }, "t",      function (c) c.ontop = not c.ontop            end),
     awful.key({ modkey,           }, "n",      function (c) c.minimized = not c.minimized    end),
     awful.key({ modkey,           }, "m",
         function (c)
@@ -328,22 +362,22 @@ awful.rules.rules = {
     { rule = { class = "Konsole" },
       properties = {
          tag = tags[1][2],
-         maximized_vertical = true,
-         maximized_horizontal = true,
+--         maximized_vertical = true,
+--         maximized_horizontal = true,
       } },
     { rule = { class = "Firefox" },
       properties = {
          tag = tags[1][3],
          floating = false,
-         maximized_vertical = true,
-         maximized_horizontal = true,
+--         maximized_vertical = true,
+--         maximized_horizontal = true,
       } },
     { rule = { class = "Opera" },
       properties = {
          tag = tags[1][3],
          floating = false,
-         maximized_vertical = true,
-         maximized_horizontal = true
+--         maximized_vertical = true,
+--         maximized_horizontal = true
       } },
 }
 -- }}}
