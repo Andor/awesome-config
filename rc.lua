@@ -42,6 +42,7 @@ end
 -- }}}
 
 -- {{{ Variable definitions
+configdir = os.getenv("HOME") .. "/.config/awesome"
 -- Установка темы
 beautiful.init(configdir .. "/theme.lua")
 
@@ -55,7 +56,6 @@ local util = require("lib.util")
 local awful = require("awful")
 local beautiful = beautiful
 local tostring, tonumber = tostring, tonumber
-configdir = os.getenv("HOME") .. "/.config/awesome"
 package.cpath = configdir .. "/contrib/LuaXml/?.so;" .. package.cpath
 local log = util.log
 local text = require("lib.widget.text")
