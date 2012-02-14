@@ -186,7 +186,7 @@ mytaglist = awful.widget.taglist(1, awful.widget.taglist.label.all, mytaglist.bu
 
     -- Create a tasklist widget
 mytasklist = awful.widget.tasklist(function(c)
-                                              return awful.widget.tasklist.label.currenttags(c, s)
+                                              return awful.widget.tasklist.label.currenttags(c, 1)
                                           end, mytasklist.buttons)
 
 -- awful.widget.wibox.stretch(myweather)
