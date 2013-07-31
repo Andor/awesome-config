@@ -6,37 +6,39 @@
 
 local setmetatable = setmetatable
 local type = type
-local pairs = pairs
-local capi = { widget = widget,
-               timer = timer }
+local textbox = require('wibox.widget.textbox')
+local capi = { timer = timer }
 
---- Text widget.
-module("lib.widget.text")
+local text = { mt = {} }
 
 --- Создаёт текстовый виджет с опциональным автообновлением.
 -- @param args Standard arguments for textbox widget.
 -- @param update_finction Функция обновления текста виджета.
 -- @param timeout Таймаут обновления. По-умолчанию 10.
 -- @return Виджет.
-function new(args)
+function text.new(args)
     local args = args or {}
     local timeout = args.timeout or 60
 
-    args.type = "textbox"
-    local w = capi.widget(args)
+    local w = textbox()
 
     if args.callback and type(args.callback) == "function" then
        local update = args.callback
        local timer = capi.timer { timeout = timeout }
-       w.update = function() w.text = update() end
-       w.text = update()
-       timer:add_signal("timeout", function() w.text = update() end)
+       timer:connect_signal("timeout", function() w:set_markup( update() ) end)
        timer:start()
+       timer:emit_signal("timeout")
     end
 
     return w
 end
 
-setmetatable(_M, { __call = function(_, ...) return new(...) end })
+function text.mt:__call(...)
+    return text.new(...)
+end
+
+
+-- setmetatable(_M, { __call = function(_, ...) return new(...) end })
+return setmetatable(text, text.mt)
 
 -- vim: filetype=lua:expandtab:shiftwidth=4:tabstop=8:softtabstop=4:encoding=utf-8:textwidth=80

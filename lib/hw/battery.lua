@@ -1,5 +1,6 @@
 local io = io
 local os = os
+local beautiful = require('beautiful')
 
 -- функция получения заряда батареи
 function get_battery_data(battery)
