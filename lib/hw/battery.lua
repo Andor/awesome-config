@@ -13,8 +13,8 @@ function get_battery_data(battery)
    if fbatstate then
       -- Получение текущего заряда, скорости разрядки и состояния.
       for l in fbatstate:lines("/proc/acpi/battery/BAT".. battery .."/state") do
-	 if l:match("remaining capacity:") then current = l:gsub("remaining capacity:%s*(%d+) mAh$", "%1") end
-	 if l:match("present rate:") then rate = l:gsub("present rate:%s*(%d+) mA$", "%1") end
+	 if l:match("remaining capacity:") then current = l:gsub("remaining capacity:%s*(%d+) m[AW]h$", "%1") end
+	 if l:match("present rate:") then rate = l:gsub("present rate:%s*(%d+) m[AW]$", "%1") end
 	 if l:match("charging state:") then state = l:gsub("charging state:%s*(%S+)$", "%1") end
       end
       fbatstate:close() 
@@ -23,9 +23,9 @@ function get_battery_data(battery)
    if fbatinfo then
       -- Получение максимального заряда и уровня опасного зазряда.
       for l in fbatinfo:lines("/proc/acpi/battery/BAT".. battery .. "/info") do
-	 if l:match("last full capacity:") then total = l:gsub("last full capacity:%s*(%d+) mAh$", "%1") end
+	 if l:match("last full capacity:") then total = l:gsub("last full capacity:%s*(%d+) m[AW]h$", "%1") end
 	 if l:match("design capacity warning:") then
-	    if tonumber(current) <= tonumber(l:gsub("design capacity warning:%s*(%d+) mAh$", "%1"), 10 ) then
+	    if tonumber(current) <= tonumber(l:gsub("design capacity warning:%s*(%d+) m[AW]h$", "%1"), 10 ) then
 	       warning = true else warning = false
 	    end
 	 end
@@ -45,7 +45,7 @@ function get_battery_data(battery)
 
    -- Подсчёт процентов разряда.
    local percent = math.floor(current/total*100)
-   if percent > 100 then percent = 100 end
+--   if percent > 100 then percent = 100 end
    if percent < 0 then percent = 0 end
 
    -- Обновление данных.
